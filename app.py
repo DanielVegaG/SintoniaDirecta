@@ -1,5 +1,6 @@
 import streamlit as st
-from pytube import YouTube
+import requests
+from pytube import YouTube, StreamQuery
 
 import base64
 import os
@@ -10,43 +11,41 @@ def clear_text():
     st.session_state["quality"] = ""
 
 def download_file(stream, fmt):
-    """Descarga el archivo seleccionado."""
+    """  """
     if fmt == 'audio':
-        # Descargar como mp3 si es audio
         title = stream.title + '.mp3'
-        audio_stream = stream.streams.get_audio_only(subtype='mp4')
-        audio_stream.download(filename=title)
     else:
-        # Descargar como mp4 si es video
         title = stream.title + '.mp4'
-        stream.download(filename=title)
+
+    stream.download(filename=title)
     
     if 'DESKTOP_SESSION' not in os.environ:
-        # Mostrar enlace de descarga si no está en sesión de escritorio
+    
         with open(title, 'rb') as f:
             bytes = f.read()
             b64 = base64.b64encode(bytes).decode()
             href = f'<a href="data:file/zip;base64,{b64}" download=\'{title}\'>\
-                Si le das a este link, se te descargará tu canción \
+                Haz clic aquí para descargar {title} \
             </a>'
             st.markdown(href, unsafe_allow_html=True)
 
         os.remove(title)
 
+
 def can_access(url):
-    """Verifica si se puede acceder al video."""
+    """ check whether you can access the video """
     access = False
     if len(url) > 0:
         try:
             tube = YouTube(url)
             if tube.check_availability() is None:
-                access = True
+                access=True
         except:
             pass
     return access
 
 def refine_format(fmt_type: str='audio') -> (str, bool):
-    """Refina el tipo de formato seleccionado."""
+    """ """
     if fmt_type == 'video':
         fmt = 'video'
         progressive = True
@@ -56,29 +55,60 @@ def refine_format(fmt_type: str='audio') -> (str, bool):
 
     return fmt, progressive
 
+
 st.set_page_config(page_title=" Sintonía Directa", layout="wide")
 
-# Sidebar
+# ====== SIDEBAR ======
 with st.sidebar:
+
     st.title("Descargador de música de YouTube")
+
     url = st.text_input("Pon aquí el enlace:", key="url")
 
-    fmt_type = st.selectbox("Escoge el formato:", ['audio (only)', 'video'], key='fmt')
+    fmt_type = st.selectbox("Escoge el formato:", ['audio', 'video'], key='fmt')
+
     fmt, progressive = refine_format(fmt_type)
 
     if can_access(url):
+
         tube = YouTube(url)
-        streams_fmt = [t for t in tube.streams if t.type == fmt and t.is_progressive == progressive]
+
+        streams_fmt = [t for t in tube.streams if t.type==fmt and t.is_progressive==progressive]
 
         mime_types = set([t.mime_type for t in streams_fmt])
         mime_type = st.selectbox("Mime types:", mime_types, key='mime')
 
-        streams_mime = tube.streams.filter(only_audio=True, subtype='mp4')
+        streams_mime = StreamQuery(streams_fmt).filter(mime_type=mime_type)
 
-        # Calidad promedio para audio y resolución para video
-        if fmt == 'audio':
+        # quality is average bitrate for audio and resolution for video
+        if fmt=='audio':
             quality = set([t.abr for t in streams_mime])
-            quality_type = st.selectbox('Elige el bitrate promedio: ', quality, key='quality')
-            stream_quality = tube.streams.filter(abr=quality_type)
-        elif fmt == 'video':
-            resolucion streams mimeType
+            quality_type = st.selectbox('Choose average bitrate: ', quality, key='quality')
+            stream_quality = StreamQuery(streams_mime).filter(abr=quality_type)
+        elif fmt=='video':
+            quality = set([t.resolution for t in streams_mime])
+            quality_type = st.selectbox('Choose resolution: ', quality, key='quality')
+            stream_quality = StreamQuery(streams_mime).filter(res=quality_type)
+
+        # === Download block === #
+        if stream_quality is not None:
+            stream_final = stream_quality[0]
+            if 'DESKTOP_SESSION' in os.environ:
+                download = st.button("Descargar canción", key='download')
+            else:
+                download = st.button("Descargar canción", key='download')
+
+            if download:
+                download_file(stream_final, fmt)
+                st.success('¡Descarga exitosa!')
+                st.balloons()
+
+        st.button("Clear all address boxes", on_click=clear_text)
+
+
+# ====== MAIN PAGE ======
+
+if can_access(url):
+    if streams_fmt is None:
+        st.write(f"No {fmt_type} stream found")
+    st.video(url)
