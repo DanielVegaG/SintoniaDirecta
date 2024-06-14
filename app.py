@@ -56,7 +56,7 @@ st.set_page_config(page_title="Sintonía Directa", layout="wide")
 with st.sidebar:
     st.title("Descargador de música de YouTube")
     url = st.text_input("Pon aquí el enlace:", key="url")
-    fmt_type = st.selectbox("Escoge el formato:", ['audio', 'video'], key='fmt')
+    fmt_type = st.selectbox("Escoge el formato:", ['Audio', 'Vídeo'], key='fmt')
 
     fmt, progressive = refine_format(fmt_type)
 
@@ -75,14 +75,13 @@ with st.sidebar:
         # === Download block === #
         if stream_quality:
             stream_final = stream_quality
-            download = st.button("Descargar canción", key='download')
+            download = st.button("Obtener canción", key='download')
 
             if download:
+                st.success('¡Obtención exitosa!')
                 download_file(stream_final, fmt)
-                st.success('¡Descarga exitosa!')
                 st.balloons()
 
-        st.button("Clear all address boxes", on_click=clear_text)
 
 # ====== MAIN PAGE ======
 if can_access(url):
