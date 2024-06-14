@@ -4,11 +4,10 @@ from pytube import YouTube
 import base64
 import os
 
-def clear_text():
-    st.session_state["url"] = ""
-
 def download_file(stream, fmt):
-    """  """
+    """ Pone el nombre del archivo al descargarlo
+            -.mp3 para audios
+            -.mp4 para vídeos """
     if fmt == 'audio':
         title = stream.title + '.mp3'
     else:
@@ -16,7 +15,7 @@ def download_file(stream, fmt):
 
     stream.download(filename=title)
     
-    if 'DESKTOP_SESSION' not in os.environ:
+    if 'DESKTOP_SESSION' not in os.environ: #comprobar que se ve desde un navegador
         with open(title, 'rb') as f:
             bytes = f.read()
             b64 = base64.b64encode(bytes).decode()
@@ -28,7 +27,7 @@ def download_file(stream, fmt):
         os.remove(title)
 
 def can_access(url):
-    """ check whether you can access the video """
+    """ Comprueba si es posible acceder al vídeo """
     access = False
     if len(url) > 0:
         try:
@@ -40,7 +39,7 @@ def can_access(url):
     return access
 
 def refine_format(fmt_type: str='audio') -> (str, bool):
-    """ """
+    """ Refinar el formato del archivo basándose en el tipo que se haya seleccionado"""
     if fmt_type == 'video':
         fmt = 'video'
         progressive = True
@@ -51,8 +50,6 @@ def refine_format(fmt_type: str='audio') -> (str, bool):
     return fmt, progressive
 
 st.set_page_config(page_title="Sintonía Directa", page_icon="icon.png",layout="wide")
-
-# ====== SIDEBAR ======
 
 st.title("Descargador de música de YouTube")
 url = st.text_input("Pon aquí el enlace:", key="url")
@@ -69,10 +66,10 @@ if can_access(url):
         # Selecciona el stream de audio con la mayor tasa de bits disponible
         stream_quality = max(streams_fmt, key=lambda s: s.abr)
     elif fmt == 'video':
-        # Selecciona el stream de video con la mayor resolución disponible
+        # Selecciona el stream de vídeo con la mayor resolución disponible
         stream_quality = max(streams_fmt, key=lambda s: s.resolution)
 
-    # === Download block === #
+    # === Bloque que descarga === #
     if stream_quality:
         stream_final = stream_quality
         download = st.button("Obtener canción", key='download')
@@ -82,9 +79,8 @@ if can_access(url):
             download_file(stream_final, fmt)
             st.balloons()
 
-
-# ====== MAIN PAGE ======
 if can_access(url):
+    '''Aquí se pone la imagen del vídeo de youtube'''
     if not streams_fmt:
         st.write(f"No se encontró flujo de {fmt_type}")
     st.video(url)
