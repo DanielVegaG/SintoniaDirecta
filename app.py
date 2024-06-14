@@ -1,85 +1,128 @@
-import subprocess
-import ffmpeg
 import streamlit as st
+import requests
+from pytube import YouTube, StreamQuery
+
+import base64
 import os
-import yt_dlp
 
-# Global variables
-downloaded_mp3_file = None
-downloaded_mp3_filename = None
+# https://www.youtube.com/watch?v=Ch5VhJzaoaI&t=90s
 
-# Función para descargar y convertir el video de YouTube a MP3 usando yt_dlp y ffmpeg
-def download_and_convert_to_mp3(url):
-    global downloaded_mp3_file, downloaded_mp3_filename
+def clear_text():
+    st.session_state["url"] = ""
+    st.session_state["mime"] = ""
+    st.session_state["quality"] = ""
 
-    # Directorio de salida para los archivos descargados
-    output_dir = './downloads'
-    os.makedirs(output_dir, exist_ok=True)
+def download_file(stream, fmt):
+    """  """
+    if fmt == 'audio':
+        title = stream.title + ' audio.'+ stream_final.subtype
+    else:
+        title = stream.title + '.'+ stream_final.subtype
 
-    # Ruta a los ejecutables de FFmpeg
-    ffmpeg_dir = os.path.abspath('./ffmpeg')
-    ffmpeg_location = os.path.join(ffmpeg_dir, 'ffmpeg.exe')
-    ffprobe_location = os.path.join(ffmpeg_dir, 'ffprobe.exe')
-
-    # Opciones para descargar y convertir el audio
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-        'outtmpl': os.path.join(output_dir, '%(title)s.%(ext)s'),
-        'ffmpeg_location': ffmpeg_location,
-        'ffprobe_location': ffprobe_location,
-    }
-
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(url, download=True)
-            video_title = info_dict.get('title', 'video')
-            downloaded_mp3_filename = f"{video_title}.mp3"
-            downloaded_mp3_file = os.path.join(output_dir, downloaded_mp3_filename)
-        return True
-    except Exception as e:
-        st.error(f'Error during download and conversion: {str(e)}')
-        return False
-
-# Función para convertir el archivo MP3 a WAV usando ffmpeg
-@st.cache(allow_output_mutation=True)
-def convert_mp3_to_wav(input_file):
-    output_file = input_file.replace('.mp3', '.wav')
-
-    ffmpeg.input(input_file).output(output_file).run(overwrite_output=True, quiet=True)
-
-    with open(output_file, 'rb') as f:
-        wav_bytes = f.read()
+    stream.download(filename=title)
     
-    os.remove(output_file)  # Eliminar el archivo WAV después de la conversión
-
-    return wav_bytes
-
-# App principal de Streamlit
-if __name__ == '__main__':
-    st.title('YouTube to MP3 Downloader and Converter')
-
-    # Entrada de la URL de YouTube
-    url = st.text_input('Enter YouTube URL:')
+    if 'DESKTOP_SESSION' not in os.environ: #and os.environ('HOSTNAME')=='streamlit':
     
-    if st.button('Download and Convert to MP3'):
-        if url:
-            if download_and_convert_to_mp3(url):
-                st.success(f'Successfully downloaded and converted: {downloaded_mp3_filename}')
+        with open(title, 'rb') as f:
+            bytes = f.read()
+            b64 = base64.b64encode(bytes).decode()
+            href = f'<a href="data:file/zip;base64,{b64}" download=\'{title}\'>\
+                Here is your link \
+            </a>'
+            st.markdown(href, unsafe_allow_html=True)
+
+        os.remove(title)
+
+
+def can_access(url):
+    """ check whether you can access the video """
+    access = False
+    if len(url) > 0:
+        try:
+            tube = YouTube(url)
+            if tube.check_availability() is None:
+                access=True
+        except:
+            pass
+    return access
+
+def refine_format(fmt_type: str='audio') -> (str, bool):
+    """ """
+    if fmt_type == 'video (only)':
+        fmt = 'video'
+        progressive = False
+    elif fmt_type == 'video + audio':
+        fmt = 'video'
+        progressive = True
+    else:
+        fmt = 'audio'
+        progressive = False
+
+    return fmt, progressive
+
+
+st.set_page_config(page_title=" Youtube downloader", layout="wide")
+
+# ====== SIDEBAR ======
+with st.sidebar:
+
+    st.title("Youtube download app")
+
+    url = st.text_input("Insert your link here", key="url")
+
+    fmt_type = st.selectbox("Choose format:", ['video (only)', 'audio (only)', 'video + audio'], key='fmt')
+
+    fmt, progressive = refine_format(fmt_type)
+
+    if can_access(url):
+
+        tube = YouTube(url)
+
+        streams_fmt = [t for t in tube.streams if t.type==fmt and t.is_progressive==progressive]
+
+        mime_types = set([t.mime_type for t in streams_fmt])
+        mime_type = st.selectbox("Mime types:", mime_types, key='mime')
+
+        streams_mime = StreamQuery(streams_fmt).filter(mime_type=mime_type)
+
+        # quality is average bitrate for audio and resolution for video
+        if fmt=='audio':
+            quality = set([t.abr for t in streams_mime])
+            quality_type = st.selectbox('Choose average bitrate: ', quality, key='quality')
+            stream_quality = StreamQuery(streams_mime).filter(abr=quality_type)
+        elif fmt=='video':
+            quality = set([t.resolution for t in streams_mime])
+            quality_type = st.selectbox('Choose resolution: ', quality, key='quality')
+            stream_quality = StreamQuery(streams_mime).filter(res=quality_type)
+
+        # === Download block === #
+        if stream_quality is not None:
+            stream_final = stream_quality[0]
+            if 'DESKTOP_SESSION' in os.environ:
+                download = st.button("Download file", key='download')
             else:
-                st.error('Failed to download and convert the video.')
+                download = st.button("Get download link", key='download')
 
-    if downloaded_mp3_file:
-        st.markdown('---')
-        st.subheader('Download Converted MP3 as WAV')
-        st.audio(downloaded_mp3_file, format='audio/mp3')
-        st.markdown('---')
+            if download:
+                download_file(stream_final, fmt)
+                st.success('Success download!')
+                st.balloons()
 
-        if st.button('Convert MP3 to WAV'):
-            wav_bytes = convert_mp3_to_wav(downloaded_mp3_file)
-            st.audio(wav_bytes, format='audio/wav', start_time=0)
+        st.button("Clear all address boxes", on_click=clear_text)
 
+        st.info(
+            "This is an open source project and you are very welcome to contribute your "
+            "comments, questions, resources and apps as "
+            "[issues](https://github.com/maxmarkov/streamlit-youtube/issues) or "
+            "[pull requests](https://github.com/maxmarkov/streamlit-youtube/pulls) "
+            "to the [source code](https://github.com/maxmarkov/streamlit-youtube). "
+        )
+
+
+
+# ====== MAIN PAGE ======
+
+if can_access(url):
+    if streams_fmt is None:
+        st.write(f"No {fmt_type} stream found")
+    st.video(url)
