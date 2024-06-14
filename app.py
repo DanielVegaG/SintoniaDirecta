@@ -53,34 +53,34 @@ def refine_format(fmt_type: str='audio') -> (str, bool):
 st.set_page_config(page_title="Sintonía Directa", layout="wide")
 
 # ====== SIDEBAR ======
-with st.sidebar:
-    st.title("Descargador de música de YouTube")
-    url = st.text_input("Pon aquí el enlace:", key="url")
-    fmt_type = st.selectbox("Escoge el formato:", ['Audio', 'Vídeo'], key='fmt')
 
-    fmt, progressive = refine_format(fmt_type)
+st.title("Descargador de música de YouTube")
+url = st.text_input("Pon aquí el enlace:", key="url")
+fmt_type = st.selectbox("Escoge el formato:", ['Audio', 'Vídeo'], key='fmt')
 
-    if can_access(url):
-        tube = YouTube(url)
+fmt, progressive = refine_format(fmt_type)
 
-        streams_fmt = [t for t in tube.streams if t.type == fmt and t.is_progressive == progressive]
+if can_access(url):
+    tube = YouTube(url)
 
-        if fmt == 'audio':
-            # Selecciona el stream de audio con la mayor tasa de bits disponible
-            stream_quality = max(streams_fmt, key=lambda s: s.abr)
-        elif fmt == 'video':
-            # Selecciona el stream de video con la mayor resolución disponible
-            stream_quality = max(streams_fmt, key=lambda s: s.resolution)
+    streams_fmt = [t for t in tube.streams if t.type == fmt and t.is_progressive == progressive]
 
-        # === Download block === #
-        if stream_quality:
-            stream_final = stream_quality
-            download = st.button("Obtener canción", key='download')
+    if fmt == 'audio':
+        # Selecciona el stream de audio con la mayor tasa de bits disponible
+        stream_quality = max(streams_fmt, key=lambda s: s.abr)
+    elif fmt == 'video':
+        # Selecciona el stream de video con la mayor resolución disponible
+        stream_quality = max(streams_fmt, key=lambda s: s.resolution)
 
-            if download:
-                st.success('¡Obtención exitosa!')
-                download_file(stream_final, fmt)
-                st.balloons()
+    # === Download block === #
+    if stream_quality:
+        stream_final = stream_quality
+        download = st.button("Obtener canción", key='download')
+
+        if download:
+            st.success('¡Obtención exitosa!')
+            download_file(stream_final, fmt)
+            st.balloons()
 
 
 # ====== MAIN PAGE ======
