@@ -13,13 +13,13 @@ def clear_text():
 def download_file(stream, fmt):
     """  """
     if fmt == 'audio':
-        title = stream.title + ' audio.'+ stream_final.subtype
+        title = stream.title + '.mp3'
     else:
-        title = stream.title + '.'+ stream_final.subtype
+        title = stream.title + '.mp4'
 
     stream.download(filename=title)
     
-    if 'DESKTOP_SESSION' not in os.environ: #and os.environ('HOSTNAME')=='streamlit':
+    if 'DESKTOP_SESSION' not in os.environ:
     
         with open(title, 'rb') as f:
             bytes = f.read()
