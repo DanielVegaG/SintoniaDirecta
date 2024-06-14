@@ -1,14 +1,11 @@
 import streamlit as st
-import requests
-from pytube import YouTube, StreamQuery
+from pytube import YouTube
 
 import base64
 import os
 
 def clear_text():
     st.session_state["url"] = ""
-    st.session_state["mime"] = ""
-    st.session_state["quality"] = ""
 
 def download_file(stream, fmt):
     """  """
@@ -20,7 +17,6 @@ def download_file(stream, fmt):
     stream.download(filename=title)
     
     if 'DESKTOP_SESSION' not in os.environ:
-    
         with open(title, 'rb') as f:
             bytes = f.read()
             b64 = base64.b64encode(bytes).decode()
@@ -31,7 +27,6 @@ def download_file(stream, fmt):
 
         os.remove(title)
 
-
 def can_access(url):
     """ check whether you can access the video """
     access = False
@@ -39,7 +34,7 @@ def can_access(url):
         try:
             tube = YouTube(url)
             if tube.check_availability() is None:
-                access=True
+                access = True
         except:
             pass
     return access
@@ -55,48 +50,32 @@ def refine_format(fmt_type: str='audio') -> (str, bool):
 
     return fmt, progressive
 
-
-st.set_page_config(page_title=" Sintonía Directa", layout="wide")
+st.set_page_config(page_title="Sintonía Directa", layout="wide")
 
 # ====== SIDEBAR ======
 with st.sidebar:
-
     st.title("Descargador de música de YouTube")
-
     url = st.text_input("Pon aquí el enlace:", key="url")
-
     fmt_type = st.selectbox("Escoge el formato:", ['audio', 'video'], key='fmt')
 
     fmt, progressive = refine_format(fmt_type)
 
     if can_access(url):
-
         tube = YouTube(url)
 
-        streams_fmt = [t for t in tube.streams if t.type==fmt and t.is_progressive==progressive]
+        streams_fmt = [t for t in tube.streams if t.type == fmt and t.is_progressive == progressive]
 
-        mime_types = set([t.mime_type for t in streams_fmt])
-        mime_type = st.selectbox("Mime types:", mime_types, key='mime')
-
-        streams_mime = StreamQuery(streams_fmt).filter(mime_type=mime_type)
-
-        # quality is average bitrate for audio and resolution for video
-        if fmt=='audio':
-            quality = set([t.abr for t in streams_mime])
-            quality_type = st.selectbox('Choose average bitrate: ', quality, key='quality')
-            stream_quality = StreamQuery(streams_mime).filter(abr=quality_type)
-        elif fmt=='video':
-            quality = set([t.resolution for t in streams_mime])
-            quality_type = st.selectbox('Choose resolution: ', quality, key='quality')
-            stream_quality = StreamQuery(streams_mime).filter(res=quality_type)
+        if fmt == 'audio':
+            # Selecciona el stream de audio con la mayor tasa de bits disponible
+            stream_quality = max(streams_fmt, key=lambda s: s.abr)
+        elif fmt == 'video':
+            # Selecciona el stream de video con la mayor resolución disponible
+            stream_quality = max(streams_fmt, key=lambda s: s.resolution)
 
         # === Download block === #
-        if stream_quality is not None:
-            stream_final = stream_quality[0]
-            if 'DESKTOP_SESSION' in os.environ:
-                download = st.button("Descargar canción", key='download')
-            else:
-                download = st.button("Descargar canción", key='download')
+        if stream_quality:
+            stream_final = stream_quality
+            download = st.button("Descargar canción", key='download')
 
             if download:
                 download_file(stream_final, fmt)
@@ -105,10 +84,8 @@ with st.sidebar:
 
         st.button("Clear all address boxes", on_click=clear_text)
 
-
 # ====== MAIN PAGE ======
-
 if can_access(url):
-    if streams_fmt is None:
-        st.write(f"No {fmt_type} stream found")
+    if not streams_fmt:
+        st.write(f"No se encontró flujo de {fmt_type}")
     st.video(url)
