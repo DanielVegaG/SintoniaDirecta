@@ -11,7 +11,7 @@ def download_file(stream, fmt):
     else:
         title = stream.title + '.mp4'
 
-    stream.download(filename=title)
+    stream.download(output_path='downloads/', filename=title)
 
     if 'DESKTOP_SESSION' not in os.environ:
         st.success(f'Archivo descargado: {title}')
@@ -44,12 +44,12 @@ if can_access(url):
         # Descarga de audio o video
         if st.button("Descargar"):
             # Si es audio
-            if tube.streams.filter(only_audio=True, file_extension='mp4'):
-                stream = tube.streams.filter(only_audio=True, file_extension='mp4').first()
+            if tube.streams.filter(only_audio=True):
+                stream = tube.streams.filter(only_audio=True).first()
                 download_file(stream, 'audio')
             # Si es video
-            elif tube.streams.filter(only_video=True, file_extension='mp4'):
-                stream = tube.streams.filter(only_video=True, file_extension='mp4').first()
+            elif tube.streams.filter(only_video=True):
+                stream = tube.streams.filter(only_video=True).first()
                 download_file(stream, 'video')
             else:
                 st.warning("No se encontraron streams de audio o video disponibles.")
