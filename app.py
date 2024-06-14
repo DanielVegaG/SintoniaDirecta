@@ -44,8 +44,8 @@ if can_access(url):
         # Descarga de audio o video
         if st.button("Descargar", key="download"):
             # Si es audio
-            if tube.streams.filter(only_audio=True, file_extension='mp4'):
-                stream = tube.streams.filter(only_audio=True, file_extension='mp4').first()
+            if tube.streams.filter(only_audio=True, file_extension='mp3'):
+                stream = tube.streams.filter(only_audio=True, file_extension='mp3').first()
                 download_file(stream, 'audio')
             # Si es video
             elif tube.streams.filter(only_video=True, file_extension='mp4'):
