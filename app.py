@@ -50,7 +50,7 @@ def refine_format(fmt_type: str='audio') -> (str, bool):
 
     return fmt, progressive
 
-st.set_page_config(page_title="Sintonía Directa", layout="wide")
+st.set_page_config(page_title="Sintonía Directa", page_icon="icon.png",layout="wide")
 
 # ====== SIDEBAR ======
 
