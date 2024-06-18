@@ -6,7 +6,6 @@ import requests
 from PIL import Image
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1
-import tempfile
 import os
 import base64
 
@@ -27,11 +26,10 @@ def descargar_video_a_buffer(url):
     img = img.convert('RGB')
 
     # Guardar carátula temporalmente
-    temp_cover = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
-    img.save(temp_cover.name, format='JPEG')
-    temp_cover.close()
+    temp_cover = os.path.join(get_temp_directory(), "cover.jpg")
+    img.save(temp_cover, format='JPEG')
 
-    return nombre_archivo, buffer, temp_cover.name, youtube_video
+    return nombre_archivo, buffer, temp_cover, youtube_video
 
 def add_metadata_to_mp3(file_path, cover_path, song_title, artist):
     try:
@@ -88,30 +86,31 @@ def main():
             st.write("Descargando MP3 con metadatos...")
 
             try:
-                # Crear archivo MP3 con metadatos
-                audio_file = os.path.join(get_downloads_directory(), titulo_video + ".mp3")  # Nombre del archivo MP3
-                buffer.seek(0)  # Reiniciar el buffer al inicio
-                with open(audio_file, 'wb') as f:
-                    f.write(buffer.read())
+                # Guardar el buffer en un archivo temporal
+                temp_audio_file = os.path.join(get_temp_directory(), f"{titulo_video}.mp3")
+                with open(temp_audio_file, 'wb') as f:
+                    f.write(buffer.getvalue())
 
                 # Agregar metadatos al archivo MP3
-                add_metadata_to_mp3(audio_file, cover_path, titulo_video, youtube_video.author)
+                add_metadata_to_mp3(temp_audio_file, cover_path, titulo_video, youtube_video.author)
 
                 # Descargar el archivo MP3
-                st.markdown(get_binary_file_downloader_html(audio_file, 'Audio MP3'), unsafe_allow_html=True)
-
-                # Eliminar el archivo temporal de la carátula
-                try:
-                    os.remove(cover_path)
-                except Exception as e:
-                    st.warning(f"No se pudo eliminar el archivo temporal de la carátula: {e}")
+                st.markdown(get_binary_file_downloader_html(temp_audio_file, 'Audio MP3'), unsafe_allow_html=True)
 
             except Exception as e:
                 st.error(f"Error al crear el archivo MP3: {e}")
 
-def get_downloads_directory():
-    """Obtiene el directorio 'Descargas' para diferentes sistemas operativos."""
-    return os.path.join(os.path.expanduser("~"), "Downloads")
+            finally:
+                # Eliminar archivos temporales
+                try:
+                    os.remove(temp_audio_file)
+                    os.remove(cover_path)
+                except Exception as e:
+                    st.warning(f"No se pudo eliminar el archivo temporal: {e}")
+
+def get_temp_directory():
+    """Obtiene el directorio temporal."""
+    return os.path.join(st._uploaded_file_manager._get_base_folder_path(), "temp")
 
 def get_binary_file_downloader_html(bin_file, file_label='File'):
     with open(bin_file, 'rb') as f:
