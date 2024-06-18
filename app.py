@@ -5,7 +5,7 @@ def main():
     st.title("Descargador de YouTube")
 
     url = st.text_input("Introduce la URL de YouTube:")
-    download_type = st.selectbox("Selecciona el tipo de descarga:", ["Lista de reproducción", "Canción individual"])
+    download_type = st.selectbox("Selecciona el tipo de descarga:", ["Canción individual", "Lista de reproducción"])
     download_format = st.selectbox("Selecciona el formato de descarga:", ["MP3", "MP4"])
 
     format_code = "mp3" if download_format == "MP3" else "mp4"
