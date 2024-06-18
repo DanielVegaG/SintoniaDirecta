@@ -91,6 +91,10 @@ def main():
                 # Crear archivo MP3 con metadatos
                 audio_file = os.path.join(get_downloads_directory(), titulo_video + ".mp3")  # Nombre del archivo MP3
                 buffer.seek(0)  # Reiniciar el buffer al inicio
+                with open(audio_file, 'wb') as f:
+                    f.write(buffer.read())
+
+                # Agregar metadatos al archivo MP3
                 add_metadata_to_mp3(audio_file, cover_path, titulo_video, youtube_video.author)
 
                 # Descargar el archivo MP3
