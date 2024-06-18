@@ -4,7 +4,7 @@ from io import BytesIO
 from pathlib import Path
 import requests
 from PIL import Image
-from mutagen.mp3 import MP3
+from mutagen.mp3 import MP3, EasyMP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1
 import tempfile
 import os
@@ -60,34 +60,46 @@ def main():
         )
 
         # Descargar botón para MP3 con metadatos
-        if st.button("Descargar MP3"):
+        if st.button("Descargar MP3 con Metadatos"):
             st.write("Descargando MP3 con metadatos...")
 
-            # Crear archivo MP3 con metadatos
-            audio_file = nombre_archivo + ".mp3"
-            audio = MP3(buffer)
-
             try:
+                # Crear archivo MP3 con metadatos
+                audio_file = nombre_archivo + ".mp3"
+                audio = MP3(buffer)
+
                 # Añadir metadatos al archivo MP3
-                audio.tags.add(ID3=ID3)
+                audio.add_tags()
                 audio.tags.add(TIT2(encoding=3, text=titulo_video))
                 if youtube_video.author:
                     audio.tags.add(TPE1(encoding=3, text=youtube_video.author))
-                audio.tags.add(APIC(encoding=3, mime='image/jpeg', type=3, desc='Cover', data=open(cover_path, 'rb').read()))
+
+                # Añadir carátula al archivo MP3
+                with open(cover_path, 'rb') as f:
+                    audio.tags.add(
+                        APIC(
+                            encoding=3,
+                            mime='image/jpeg',
+                            type=3,
+                            desc='Cover',
+                            data=f.read()
+                        )
+                    )
 
                 # Guardar el archivo MP3
                 audio.save(audio_file)
-                
+
                 # Descargar el archivo MP3
                 st.markdown(get_binary_file_downloader_html(audio_file, 'Audio MP3'), unsafe_allow_html=True)
+
+                # Eliminar el archivo temporal de la carátula
+                try:
+                    os.remove(cover_path)
+                except Exception as e:
+                    st.warning(f"No se pudo eliminar el archivo temporal de la carátula: {e}")
+
             except Exception as e:
                 st.error(f"Error al crear el archivo MP3: {e}")
-
-            # Eliminar el archivo temporal de la carátula
-            try:
-                os.remove(cover_path)
-            except Exception as e:
-                st.warning(f"No se pudo eliminar el archivo temporal de la carátula: {e}")
 
 def get_binary_file_downloader_html(bin_file, file_label='File'):
     with open(bin_file, 'rb') as f:
