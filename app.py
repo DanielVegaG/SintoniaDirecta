@@ -11,18 +11,20 @@ def main():
     format_code = "mp3" if download_format == "MP3" else "mp4"
     output_directory = get_downloads_directory()  # Usamos el directorio de 'Descargas'
 
-    if st.button("Descargar"):
-        if can_access(url):
-            try:
-                if download_type == "Lista de reproducción":
-                    download_playlist(url, output_directory, format=format_code)
-                elif download_type == "Canción individual":
-                    download_single_video(url, output_directory, format=format_code)
-                st.success("¡Descarga completada!")
-            except Exception as e:
-                st.error(f"Ocurrió un error durante la descarga: {e}")
-        else:
-            st.error("No se puede acceder al URL proporcionado.")
+    if can_access(url):
+        try:
+            if download_type == "Lista de reproducción":
+                download_playlist(url, output_directory, format=format_code)
+            elif download_type == "Canción individual":
+                download_single_video(url, output_directory, format=format_code)
+
+            download_button_text = f"Descargar {download_type} ({download_format})"
+            st.download_button(download_button_text, key='download_button')
+            st.success("¡Descarga completada!")
+        except Exception as e:
+            st.error(f"Ocurrió un error durante la descarga: {e}")
+    else:
+        st.error("No se puede acceder al URL proporcionado.")
 
 if __name__ == "__main__":
     main()
