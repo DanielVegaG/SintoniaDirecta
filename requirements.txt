@@ -3,3 +3,4 @@ streamlit
 mutagen
 Pillow
 requests
+pytube
