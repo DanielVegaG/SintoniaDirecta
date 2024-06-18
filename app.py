@@ -27,7 +27,7 @@ def descargar_video_a_buffer(url):
     img = img.convert('RGB')
 
     # Guardar carátula temporalmente
-    temp_cover = tempfile.NamedTemporaryFile(delete=False)
+    temp_cover = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
     img.save(temp_cover.name, format='JPEG')
     temp_cover.close()
 
@@ -89,7 +89,7 @@ def main():
 
             try:
                 # Crear archivo MP3 con metadatos
-                audio_file = titulo_video + ".mp3"  # Nombre del archivo MP3
+                audio_file = os.path.join(get_downloads_directory(), titulo_video + ".mp3")  # Nombre del archivo MP3
                 buffer.seek(0)  # Reiniciar el buffer al inicio
                 add_metadata_to_mp3(audio_file, cover_path, titulo_video, youtube_video.author)
 
@@ -104,6 +104,10 @@ def main():
 
             except Exception as e:
                 st.error(f"Error al crear el archivo MP3: {e}")
+
+def get_downloads_directory():
+    """Obtiene el directorio 'Descargas' para diferentes sistemas operativos."""
+    return os.path.join(os.path.expanduser("~"), "Downloads")
 
 def get_binary_file_downloader_html(bin_file, file_label='File'):
     with open(bin_file, 'rb') as f:
