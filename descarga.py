@@ -1,4 +1,3 @@
-#################### Archivo adicional donde están los métodos necesarios para la descarga
 import streamlit as st
 import base64
 import os
@@ -6,9 +5,10 @@ from pytube import YouTube
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1
 from PIL import Image
+import ffmpeg
+from ffmpeg import Error as FFMpegError  # Importar la excepción Error desde ffmpeg
 import requests
 from io import BytesIO
-import ffmpeg
 
 def download_file(stream, fmt):
     """ Pone el nombre del archivo al descargarlo
@@ -29,7 +29,7 @@ def download_file(stream, fmt):
             os.remove(title)  # Eliminar el archivo original .webm
             add_metadata(title_mp3, stream)
             title = title_mp3  # Actualizar el nombre del archivo a .mp3
-        except ffmpeg.Error as e:
+        except FFMpegError as e:  # Manejar la excepción FFMpegError
             st.error(f"Error al convertir el archivo: {e}")
             return
     
