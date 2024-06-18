@@ -1,77 +1,59 @@
 import streamlit as st
 from pytube import YouTube
-import os
-import re
+from io import BytesIO
+from pathlib import Path
 
-directory= 'downloads/'
-if not os.path.exists(directory):
-    os.makedirs(directory)
+st.set_page_config(page_title="Descargar Video", page_icon="icon.png", layout="centered", initial_sidebar_state="collapsed")
+
+@st.cache_data(show_spinner=False)
+def descargar_video_a_buffer(url, formato):
+    buffer = BytesIO()
+    youtube_video = YouTube(url)
     
-st.set_page_config(page_title="YTD ", page_icon="icon.png", layout="wide", )     
-st.markdown(f"""
-            <style>
-            .stApp {{background-image: url("https://images.unsplash.com/photo-1516557070061-c3d1653fa646?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80"); 
-                     background-attachment: fixed;
-                     background-size: cover}}
-         </style>
-         """, unsafe_allow_html=True)
+    # Obtener el título original del video
+    titulo_original = youtube_video.title
+    
+    if formato == 'mp3':
+        video = youtube_video.streams.filter(only_audio=True).first()
+    else:
+        video = youtube_video.streams.filter(progressive=True, file_extension="mp4").order_by('resolution').desc().first()
 
-@st.cache(allow_output_mutation=True)
-def get_info(url):
-    yt = YouTube(url)
-    streams= yt.streams.filter(progressive= True, type= 'video')
-    details= {}
-    details["image"]= yt.thumbnail_url
-    details["streams"]= streams
-    details["title"]= yt.title
-    details["length"]= yt.length
-    itag, resolutions, vformat, frate = ([] for i in range(4))
-    for i in streams:
-        res= re.search(r'(\d+)p', str(i))
-        typ= re.search(r'video/(\w+)', str(i))
-        fps= re.search(r'(\d+)fps', str(i))
-        tag= re.search(r'(\d+)',str(i))
-        itag.append(str(i)[tag.start():tag.end()])
-        resolutions.append(str(i)[res.start():res.end()])
-        vformat.append(str(i)[typ.start():typ.end()])
-        frate.append(str(i)[fps.start():fps.end()])
-    details["resolutions"]= resolutions
-    details["itag"]= itag
-    details["fps"]= frate
-    details["format"]= vformat
-    return details
+    nombre_archivo = video.default_filename
+    video.stream_to_buffer(buffer)
+    return titulo_original, buffer
 
-st.title("YouTube Downloader 🚀")
-url = st.text_input("Paste URL here 👇", placeholder='https://www.youtube.com/')
-if url:
-    v_info= get_info(url)
-    col1, col2= st.columns([1,1.5], gap="small")
-    with st.container():
-        with col1:            
-            st.image(v_info["image"])   
-        with col2:
-            st.subheader("Video Details ⚙️")
-            res_inp = st.selectbox('__Select Resolution__', v_info["resolutions"])
-            id = v_info["resolutions"].index(res_inp)            
-            st.write(f"__Title:__ {v_info['title']}")
-            st.write(f"__Length:__ {v_info['length']} sec")
-            st.write(f"__Resolution:__ {v_info['resolutions'][id]}")
-            st.write(f"__Frame Rate:__ {v_info['fps'][id]}")
-            st.write(f"__Format:__ {v_info['format'][id]}")
-            file_name = st.text_input('__Save as 🎯__', placeholder = v_info['title'])
-            if file_name:        
-                if file_name != v_info['title']:
-                    file_name+=".mp4"
-            else:
-                file_name = v_info['title'] + ".mp4" 
-                
-        button = st.button("Download ⚡️")
-        if button:
-            with st.spinner('Downloading...'):
-                try:
-                    ds = v_info["streams"].get_by_itag(v_info['itag'][id])
-                    ds.download(filename= file_name, output_path= "downloads/")
-                    st.success('Download Complete', icon="✅")       
-                    st.balloons()
-                except:
-                    st.error('Error: Save with a different name!', icon="🚨")          
+def main():
+    st.title("Descargar video desde YouTube")
+    url = st.text_input("Inserta la URL de YouTube:")
+    formato = st.radio("Selecciona el formato de descarga:", ('MP3', 'MP4'))
+
+    if url:
+        with st.spinner(f"Descargando stream de {'audio' if formato == 'MP3' else 'video'} desde YouTube..."):
+            titulo_original, buffer = descargar_video_a_buffer(url, formato.lower())
+        
+        st.subheader("Título")
+        st.write(titulo_original)
+        
+        if formato == 'MP3':
+            titulo_audio = Path(titulo_original).with_suffix(".mp3").name
+            st.subheader("Descargar Archivo de Audio (MP3)")
+            st.download_button(
+                label="Descargar MP3",
+                data=buffer,
+                file_name=titulo_audio,
+                mime="audio/mpeg"
+            )
+        else:
+            titulo_video = Path(titulo_original).with_suffix(".mp4").name
+            st.subheader("Ver video")
+            st.video(buffer, format='video/mp4')
+            st.subheader("Descargar Archivo de Video (MP4)")
+            st.download_button(
+                label="Descargar MP4",
+                data=buffer,
+                file_name=titulo_video,
+                mime="video/mp4"
+            )
+
+if __name__ == "__main__":
+    main()
