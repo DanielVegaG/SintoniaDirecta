@@ -1,6 +1,5 @@
-pytube
+yt-dlp
+streamlit
 mutagen
-pillow
-ffmpeg-python
+Pillow
 requests
-yt_dlp
