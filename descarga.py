@@ -24,47 +24,58 @@ def download_file(stream, fmt):
     
     if fmt == 'audio':
         # Convertir webm a mp3
-        subprocess.run(['ffmpeg', '-i', title, '-vn', '-ab', '192k', '-ar', '44100', '-y', title_mp3])
-        os.remove(title)  # Eliminar el archivo original .webm
-        add_metadata(title_mp3, stream)
-        title = title_mp3  # Actualizar el nombre del archivo a .mp3
+        try:
+            subprocess.run(['ffmpeg', '-i', title, '-vn', '-ab', '192k', '-ar', '44100', '-y', title_mp3], check=True)
+            os.remove(title)  # Eliminar el archivo original .webm
+            add_metadata(title_mp3, stream)
+            title = title_mp3  # Actualizar el nombre del archivo a .mp3
+        except subprocess.CalledProcessError as e:
+            st.error(f"Error al convertir el archivo: {e}")
+            return
     
     if 'DESKTOP_SESSION' not in os.environ:  # comprobar que se ve desde un navegador
-        with open(title, 'rb') as f:
-            bytes = f.read()
-            b64 = base64.b64encode(bytes).decode()
-            href = f'<a href="data:application/octet-stream;base64,{b64}" download="{title}">\
-                Haz clic aquí para descargar {title} \
-            </a>'
-            st.markdown(href, unsafe_allow_html=True)
-
-        os.remove(title)
+        try:
+            with open(title, 'rb') as f:
+                bytes = f.read()
+                b64 = base64.b64encode(bytes).decode()
+                href = f'<a href="data:application/octet-stream;base64,{b64}" download="{title}">\
+                    Haz clic aquí para descargar {title} \
+                </a>'
+                st.markdown(href, unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"Error al crear el enlace de descarga: {e}")
+        finally:
+            if os.path.exists(title):
+                os.remove(title)
 
 def add_metadata(file_path, stream):
     """ Añadir metadatos al archivo de audio """
-    audio = MP3(file_path, ID3=ID3)
-    
-    # Añadir título y artista
-    audio['TIT2'] = TIT2(encoding=3, text=stream.title)
-    audio['TPE1'] = TPE1(encoding=3, text=stream.author)
-    
-    # Descargar y añadir carátula
-    response = requests.get(stream.thumbnail_url)
-    img = Image.open(BytesIO(response.content))
-    img.save("cover.jpg")
-    
-    with open("cover.jpg", "rb") as img_file:
-        audio.tags.add(
-            APIC(
-                encoding=3,  # 3 is for utf-8
-                mime="image/jpeg",
-                type=3,  # 3 is for the cover image
-                desc="Cover",
-                data=img_file.read()
+    try:
+        audio = MP3(file_path, ID3=ID3)
+        
+        # Añadir título y artista
+        audio['TIT2'] = TIT2(encoding=3, text=stream.title)
+        audio['TPE1'] = TPE1(encoding=3, text=stream.author)
+        
+        # Descargar y añadir carátula
+        response = requests.get(stream.thumbnail_url)
+        img = Image.open(BytesIO(response.content))
+        img.save("cover.jpg")
+        
+        with open("cover.jpg", "rb") as img_file:
+            audio.tags.add(
+                APIC(
+                    encoding=3,  # 3 is for utf-8
+                    mime="image/jpeg",
+                    type=3,  # 3 is for the cover image
+                    desc="Cover",
+                    data=img_file.read()
+                )
             )
-        )
-    audio.save()
-    os.remove("cover.jpg")
+        audio.save()
+        os.remove("cover.jpg")
+    except Exception as e:
+        st.error(f"Error al añadir metadatos: {e}")
 
 def can_access(url):
     """ Comprueba si es posible acceder al vídeo """
