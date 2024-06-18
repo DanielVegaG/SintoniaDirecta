@@ -10,6 +10,9 @@ def descargar_video_a_buffer(url, formato):
     buffer = BytesIO()
     youtube_video = YouTube(url)
     
+    # Obtener el título original del video
+    titulo_original = youtube_video.title
+    
     if formato == 'mp3':
         video = youtube_video.streams.filter(only_audio=True).first()
     else:
@@ -17,7 +20,7 @@ def descargar_video_a_buffer(url, formato):
 
     nombre_archivo = video.default_filename
     video.stream_to_buffer(buffer)
-    return nombre_archivo, buffer
+    return titulo_original, buffer
 
 def main():
     st.title("Descargar video desde YouTube")
@@ -26,13 +29,13 @@ def main():
 
     if url:
         with st.spinner(f"Descargando stream de {'audio' if formato == 'MP3' else 'video'} desde YouTube..."):
-            nombre_archivo, buffer = descargar_video_a_buffer(url, formato.lower())
+            titulo_original, buffer = descargar_video_a_buffer(url, formato.lower())
         
         st.subheader("Título")
-        st.write(nombre_archivo)
+        st.write(titulo_original)
         
         if formato == 'MP3':
-            titulo_audio = Path(nombre_archivo).with_suffix(".mp3").name
+            titulo_audio = Path(titulo_original).with_suffix(".mp3").name
             st.subheader("Descargar Archivo de Audio (MP3)")
             st.download_button(
                 label="Descargar MP3",
@@ -41,7 +44,7 @@ def main():
                 mime="audio/mpeg"
             )
         else:
-            titulo_video = Path(nombre_archivo).with_suffix(".mp4").name
+            titulo_video = Path(titulo_original).with_suffix(".mp4").name
             st.subheader("Ver video")
             st.video(buffer, format='video/mp4')
             st.subheader("Descargar Archivo de Video (MP4)")
