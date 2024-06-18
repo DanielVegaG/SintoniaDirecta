@@ -3,4 +3,3 @@ mutagen
 pillow
 ffmpeg-python
 requests
-io
