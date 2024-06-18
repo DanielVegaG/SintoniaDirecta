@@ -28,7 +28,7 @@ def download_file(stream, fmt):
             os.remove(title)  # Eliminar el archivo original .webm
             add_metadata(title_mp3, stream)
             title = title_mp3  # Actualizar el nombre del archivo a .mp3
-        except ffmpeg.Error as e:
+        except Exception as e:
             st.error(f"Error al convertir el archivo: {e}")
             return
     
