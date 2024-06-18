@@ -23,10 +23,14 @@ def download_file(stream, fmt):
     
     if fmt == 'audio':
         # Convertir webm a mp3 usando ffmpeg-python
-        ffmpeg.input(title).output(title_mp3, **{'ab': '192k', 'ar': '44100', 'y': None}).run()
-        os.remove(title)  # Eliminar el archivo original .webm
-        add_metadata(title_mp3, stream)
-        title = title_mp3  # Actualizar el nombre del archivo a .mp3
+        try:
+            ffmpeg.input(title).output(title_mp3, **{'vn': True, 'ab': '192k', 'ar': 44100, 'y': None}).run(overwrite_output=True)
+            os.remove(title)  # Eliminar el archivo original .webm
+            add_metadata(title_mp3, stream)
+            title = title_mp3  # Actualizar el nombre del archivo a .mp3
+        except ffmpeg.Error as e:
+            st.error(f"Error al convertir el archivo: {e}")
+            return
     
     if 'DESKTOP_SESSION' not in os.environ:  # comprobar que se ve desde un navegador
         try:
