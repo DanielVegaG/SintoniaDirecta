@@ -1,4 +1,4 @@
 pytube
 mutagen
 pillow
-ffmpeg
+ffmpeg-python

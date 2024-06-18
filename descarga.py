@@ -8,7 +8,7 @@ from mutagen.id3 import ID3, APIC, TIT2, TPE1
 from PIL import Image
 import requests
 from io import BytesIO
-import subprocess
+import ffmpeg
 
 def download_file(stream, fmt):
     """ Pone el nombre del archivo al descargarlo
@@ -23,13 +23,13 @@ def download_file(stream, fmt):
     stream.download(filename=title)
     
     if fmt == 'audio':
-        # Convertir webm a mp3
+        # Convertir webm a mp3 usando ffmpeg-python
         try:
-            subprocess.run(['ffmpeg', '-i', title, '-vn', '-ab', '192k', '-ar', '44100', '-y', title_mp3], check=True)
+            ffmpeg.input(title).output(title_mp3, **{'ab': '192k', 'ar': '44100', 'y': None}).run()
             os.remove(title)  # Eliminar el archivo original .webm
             add_metadata(title_mp3, stream)
             title = title_mp3  # Actualizar el nombre del archivo a .mp3
-        except subprocess.CalledProcessError as e:
+        except ffmpeg.Error as e:
             st.error(f"Error al convertir el archivo: {e}")
             return
     
@@ -89,7 +89,9 @@ def can_access(url):
             pass
     return access
 
-def refine_format(fmt_type: str='audio') -> (str, bool):
+from typing import Tuple
+
+def refine_format(fmt_type: str='audio') -> Tuple[str, bool]:
     """ Refinar el formato del archivo basándose en el tipo que se haya seleccionado"""
     if fmt_type == 'video':
         fmt = 'video'
