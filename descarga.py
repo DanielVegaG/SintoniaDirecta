@@ -24,11 +24,11 @@ def download_file(stream, fmt):
     if fmt == 'audio':
         add_metadata(title, stream)
     
-    if 'DESKTOP_SESSION' not in os.environ: #comprobar que se ve desde un navegador
+    if 'DESKTOP_SESSION' not in os.environ:  # comprobar que se ve desde un navegador
         with open(title, 'rb') as f:
             bytes = f.read()
             b64 = base64.b64encode(bytes).decode()
-            href = f'<a href="data:file/zip;base64,{b64}" download=\'{title}\'>\
+            href = f'<a href="data:application/octet-stream;base64,{b64}" download="{title}">\
                 Haz clic aquí para descargar {title} \
             </a>'
             st.markdown(href, unsafe_allow_html=True)
