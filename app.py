@@ -89,7 +89,7 @@ def main():
 
             try:
                 # Crear archivo MP3 con metadatos
-                audio_file = nombre_archivo + ".mp3"
+                audio_file = titulo_video + ".mp3"  # Nombre del archivo MP3
                 buffer.seek(0)  # Reiniciar el buffer al inicio
                 add_metadata_to_mp3(audio_file, cover_path, titulo_video, youtube_video.author)
 
