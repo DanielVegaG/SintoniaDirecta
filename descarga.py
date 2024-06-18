@@ -57,9 +57,14 @@ def add_metadata(file_path, stream):
     try:
         audio = MP3(file_path, ID3=ID3)
         
-        # Añadir título y artista
+        # Añadir título
         audio['TIT2'] = TIT2(encoding=3, text=stream.title)
-        audio['TPE1'] = TPE1(encoding=3, text=stream.author)
+        
+        # Añadir artista si está disponible
+        if hasattr(stream, 'author') and stream.author:
+            audio['TPE1'] = TPE1(encoding=3, text=stream.author)
+        else:
+            st.warning("No se encontró información de autor para añadir como metadato.")
         
         # Descargar y añadir carátula
         response = requests.get(stream.thumbnail_url)
