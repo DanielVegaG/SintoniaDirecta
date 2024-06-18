@@ -1,7 +1,8 @@
 import streamlit as st
 from pytube import YouTube
 from io import BytesIO
-from pathlib import Path
+from urllib.parse import unquote
+import re
 
 st.set_page_config(page_title="Descargar Video", page_icon="icon.png", layout="centered", initial_sidebar_state="collapsed")
 
@@ -10,8 +11,8 @@ def descargar_video_a_buffer(url, formato):
     buffer = BytesIO()
     youtube_video = YouTube(url)
     
-    # Obtener el título original del video
-    titulo_original = youtube_video.title
+    # Obtener el título original del video y decodificar caracteres especiales
+    titulo_original = unquote(youtube_video.title)
     
     if formato == 'mp3':
         video = youtube_video.streams.filter(only_audio=True).first()
@@ -21,6 +22,10 @@ def descargar_video_a_buffer(url, formato):
     nombre_archivo = video.default_filename
     video.stream_to_buffer(buffer)
     return titulo_original, buffer
+
+def clean_filename(filename):
+    # Remove invalid characters for filenames in Windows
+    return re.sub(r'[<>:"/\\|?*]', '', filename)
 
 def main():
     st.title("Descargar video desde YouTube")
@@ -35,7 +40,7 @@ def main():
         st.write(titulo_original)
         
         if formato == 'MP3':
-            titulo_audio = Path(titulo_original).with_suffix(".mp3").name
+            titulo_audio = clean_filename(titulo_original) + ".mp3"
             st.subheader("Descargar Archivo de Audio (MP3)")
             st.download_button(
                 label="Descargar MP3",
@@ -44,7 +49,7 @@ def main():
                 mime="audio/mpeg"
             )
         else:
-            titulo_video = Path(titulo_original).with_suffix(".mp4").name
+            titulo_video = clean_filename(titulo_original) + ".mp4"
             st.subheader("Ver video")
             st.video(buffer, format='video/mp4')
             st.subheader("Descargar Archivo de Video (MP4)")
