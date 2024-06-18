@@ -3,7 +3,7 @@ import os
 import streamlit as st
 
 # Configuración de página y barra lateral
-st.set_page_config(page_title='Descargador de YouTube', page_icon='🎬', layout='centered', initial_sidebar_state='collapsed')
+st.set_page_config(page_title='Descargador de YouTube', page_icon='icon.png', layout='centered', initial_sidebar_state='collapsed')
 
 # Barra lateral con opciones
 st.sidebar.title('YouTube Downloader')
@@ -44,13 +44,11 @@ def Download():
                     youtubeObject = youtubeObject.streams.get_by_resolution("144p")
 
                 # Directorio de salida para descarga de videos
-                if youtubeObject:
-                    save_dir = 'output/'
-                    os.makedirs(save_dir, exist_ok=True)
-                    youtubeObject.download(output_path=save_dir)
-                    st.success("Descarga completada exitosamente.")
-                else:
-                    st.error("No se encontró una transmisión de video adecuada para la resolución seleccionada. Intenta con otra resolución.")
+                save_dir = 'output/videos/'
+                os.makedirs(save_dir, exist_ok=True)
+                youtubeObject.download(output_path=save_dir)
+                st.success(f"Descarga del video '{youtubeObject.title}' completada exitosamente en '{save_dir}'.")
+                st.info("Revisa la carpeta 'output/videos/' para encontrar el archivo descargado.")
 
             except Exception as e:
                 st.error(f"Ha ocurrido un error: {e}")
@@ -66,10 +64,11 @@ def Download():
                 audio = youtubeObject.streams.filter(only_audio=True).first()
 
                 # Directorio de salida para descarga de audio
-                save_dir = 'output/'
+                save_dir = 'output/audios/'
                 os.makedirs(save_dir, exist_ok=True)
                 audio.download(output_path=save_dir)
-                st.success("Descarga completada exitosamente.")
+                st.success(f"Descarga del audio '{audio.title}' completada exitosamente en '{save_dir}'.")
+                st.info("Revisa la carpeta 'output/audios/' para encontrar el archivo descargado.")
 
             except Exception as e:
                 st.error(f"Ha ocurrido un error: {e}")
