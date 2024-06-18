@@ -6,7 +6,6 @@ from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1
 from PIL import Image
 import ffmpeg
-from ffmpeg import Error as FFMpegError  # Importar la excepción Error desde ffmpeg
 import requests
 from io import BytesIO
 
@@ -24,14 +23,10 @@ def download_file(stream, fmt):
     
     if fmt == 'audio':
         # Convertir webm a mp3 usando ffmpeg-python
-        try:
-            ffmpeg.input(title).output(title_mp3, **{'ab': '192k', 'ar': '44100', 'y': None}).run()
-            os.remove(title)  # Eliminar el archivo original .webm
-            add_metadata(title_mp3, stream)
-            title = title_mp3  # Actualizar el nombre del archivo a .mp3
-        except FFMpegError as e:  # Manejar la excepción FFMpegError
-            st.error(f"Error al convertir el archivo: {e}")
-            return
+        ffmpeg.input(title).output(title_mp3, **{'ab': '192k', 'ar': '44100', 'y': None}).run()
+        os.remove(title)  # Eliminar el archivo original .webm
+        add_metadata(title_mp3, stream)
+        title = title_mp3  # Actualizar el nombre del archivo a .mp3
     
     if 'DESKTOP_SESSION' not in os.environ:  # comprobar que se ve desde un navegador
         try:
