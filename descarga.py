@@ -3,26 +3,31 @@ import streamlit as st
 import base64
 import os
 from pytube import YouTube
-from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, APIC, TIT2, TPE1
 from PIL import Image
 import requests
 from io import BytesIO
+import subprocess
 
 def download_file(stream, fmt):
     """ Pone el nombre del archivo al descargarlo
             -.mp3 para audios
             -.mp4 para vídeos """
     if fmt == 'audio':
-        title = stream.title + '.mp3'
+        title = stream.title + '.webm'
+        title_mp3 = stream.title + '.mp3'
     else:
         title = stream.title + '.mp4'
 
     stream.download(filename=title)
     
     if fmt == 'audio':
-        add_metadata(title, stream)
+        # Convertir webm a mp3
+        subprocess.run(['ffmpeg', '-i', title, '-vn', '-ab', '192k', '-ar', '44100', '-y', title_mp3])
+        os.remove(title)  # Eliminar el archivo original .webm
+        add_metadata(title_mp3, stream)
+        title = title_mp3  # Actualizar el nombre del archivo a .mp3
     
     if 'DESKTOP_SESSION' not in os.environ:  # comprobar que se ve desde un navegador
         with open(title, 'rb') as f:
