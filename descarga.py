@@ -66,23 +66,27 @@ def add_metadata(file_path, stream):
         else:
             st.warning("No se encontró información de autor para añadir como metadato.")
         
-        # Descargar y añadir carátula
-        response = requests.get(stream.thumbnail_url)
-        img = Image.open(BytesIO(response.content))
-        img.save("cover.jpg")
-        
-        with open("cover.jpg", "rb") as img_file:
-            audio.tags.add(
-                APIC(
-                    encoding=3,  # 3 is for utf-8
-                    mime="image/jpeg",
-                    type=3,  # 3 is for the cover image
-                    desc="Cover",
-                    data=img_file.read()
+        # Añadir carátula si está disponible
+        if hasattr(stream, 'thumbnail_url') and stream.thumbnail_url:
+            response = requests.get(stream.thumbnail_url)
+            img = Image.open(BytesIO(response.content))
+            img.save("cover.jpg")
+            
+            with open("cover.jpg", "rb") as img_file:
+                audio.tags.add(
+                    APIC(
+                        encoding=3,  # 3 is for utf-8
+                        mime="image/jpeg",
+                        type=3,  # 3 is for the cover image
+                        desc="Cover",
+                        data=img_file.read()
+                    )
                 )
-            )
+            os.remove("cover.jpg")
+        else:
+            st.warning("No se encontró URL de la carátula para añadir como metadato.")
+        
         audio.save()
-        os.remove("cover.jpg")
     except Exception as e:
         st.error(f"Error al añadir metadatos: {e}")
 
