@@ -1,43 +1,28 @@
 import streamlit as st
-from pytube import YouTube
-from descarga import download_file, can_access, refine_format
-
-st.set_page_config(page_title="Sintonía Directa", page_icon="icon.png", layout="wide")
+from descarga import download_playlist, download_single_video, can_access, get_downloads_directory
 
 def main():
-    st.title("Descargador de música de YouTube")
-    url = st.text_input("Pon aquí el enlace:", key="url")
-    fmt_type = st.selectbox("Escoge el formato:", ['Audio', 'Vídeo'], key='fmt')
+    st.title("Descargador de YouTube")
 
-    fmt, progressive = refine_format(fmt_type)
+    url = st.text_input("Introduce la URL de YouTube:")
+    download_type = st.selectbox("Selecciona el tipo de descarga:", ["Lista de reproducción", "Canción individual"])
+    download_format = st.selectbox("Selecciona el formato de descarga:", ["MP3", "MP4"])
 
-    if can_access(url):
-        tube = YouTube(url)
+    format_code = "mp3" if download_format == "MP3" else "mp4"
+    output_directory = get_downloads_directory()  # Usamos el directorio de 'Descargas'
 
-        streams_fmt = [t for t in tube.streams if t.type == fmt and t.is_progressive == progressive]
-
-        if fmt == 'audio':
-            # Selecciona el stream de audio con la mayor tasa de bits disponible
-            stream_quality = max(streams_fmt, key=lambda s: s.abr)
-        elif fmt == 'video':
-            # Selecciona el stream de vídeo con la mayor resolución disponible
-            stream_quality = max(streams_fmt, key=lambda s: s.resolution)
-
-        # === Bloque que descarga === #
-        if stream_quality:
-            stream_final = stream_quality
-            download = st.button("Obtener canción", key='download')
-
-            if download:
-                st.success('¡Obtención exitosa!')
-                download_file(stream_final, fmt)
-                st.balloons()
-
-    if can_access(url):
-        '''Aquí se pone la imagen del vídeo de youtube'''
-        if not streams_fmt:
-            st.write(f"No se encontró flujo de {fmt_type}")
-        st.video(url)
+    if st.button("Descargar"):
+        if can_access(url):
+            try:
+                if download_type == "Lista de reproducción":
+                    download_playlist(url, output_directory, format=format_code)
+                elif download_type == "Canción individual":
+                    download_single_video(url, output_directory, format=format_code)
+                st.success("¡Descarga completada!")
+            except Exception as e:
+                st.error(f"Ocurrió un error durante la descarga: {e}")
+        else:
+            st.error("No se puede acceder al URL proporcionado.")
 
 if __name__ == "__main__":
     main()

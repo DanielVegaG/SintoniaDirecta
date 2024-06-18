@@ -3,3 +3,4 @@ mutagen
 pillow
 ffmpeg-python
 requests
+yt_dlp
