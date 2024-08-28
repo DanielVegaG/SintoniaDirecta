@@ -22,3 +22,9 @@ Puedes instalarlas usando pip:
 
 ```bash
 pip install streamlit pytube
+```
+
+## Uso de aplicación
+
+Puede usarse a través del siguiente enlace:
+https://sintoniadirecta.streamlit.app/
