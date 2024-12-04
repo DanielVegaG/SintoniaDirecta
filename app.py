@@ -16,23 +16,27 @@ def descargar_video_a_buffer(url, formato):
         buffer = BytesIO()
         ydl_opts = {
             'format': 'bestaudio/best' if formato == 'mp3' else 'bestvideo+bestaudio/best',
+            'outtmpl': '-',  # Salida al buffer
             'postprocessors': [
                 {'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'} if formato == 'mp3' else {},
-                {'key': 'FFmpegMetadata'},
-                {'key': 'EmbedThumbnail'},
+                {'key': 'FFmpegMetadata'},  # Añadir metadatos al archivo
+                {'key': 'EmbedThumbnail', 'already_have_thumbnail': False},  # Incrustar carátula
             ],
-            'outtmpl': '-',  # Salida al buffer
-            'writethumbnail': True,
+            'writethumbnail': True,  # Descargar carátulas
             'cookiefile': 'cookies.txt',
             'quiet': False,
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            data = ydl.extract_info(url, download=False)
+            data = ydl.extract_info(url, download=False)  # Obtener información sin descargar
             titulo_original = data.get('title', 'sin_título')
             artista = data.get('uploader', 'desconocido')
-            ydl.download([url])  # Descargar y procesar
-            buffer.write(ydl.urlopen(data['url']).read())
+            ydl.download([url])  # Descargar el archivo procesado
+            
+            # Abrimos el archivo temporal procesado para pasarlo al buffer
+            temp_file = f"{titulo_original}.mp3"
+            with open(temp_file, "rb") as f:
+                buffer.write(f.read())
         
         return titulo_original, artista, buffer
     except Exception as e:
