@@ -25,10 +25,10 @@ def descargar_video_a_buffer(url, formato):
             'outtmpl': temp_filename + '.%(ext)s',  # Guardamos el archivo temporalmente en disco
             'postprocessors': [
                 {'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'} if formato == 'mp3' else {},
-                {'key': 'FFmpegMetadata'},  # Añadir metadatos al archivo
-                {'key': 'EmbedThumbnail', 'already_have_thumbnail': False},  # Incrustar carátula
+                {'key': 'FFmpegMetadata'},  # Añadir metadatos al archivo solo si es audio
+                {'key': 'EmbedThumbnail', 'already_have_thumbnail': False} if formato == 'mp3' else {},  # Incrustar carátula solo si es audio
             ],
-            'writethumbnail': True,  # Descargar carátulas
+            'writethumbnail': True,  # Descargar carátulas solo si es audio
             'cookiefile': 'cookies.txt',
             'quiet': True,
             'noplaylist': True,  # Evitar que descargue listas de reproducción
@@ -43,7 +43,7 @@ def descargar_video_a_buffer(url, formato):
             ydl.download([url])
 
         # Cargar el archivo descargado en el buffer
-        with open(temp_filename + '.mp3', 'rb') as f:
+        with open(temp_filename + '.mp4', 'rb') as f:
             buffer = BytesIO(f.read())
         
         # Limpiar el archivo temporal después de usarlo
@@ -54,6 +54,7 @@ def descargar_video_a_buffer(url, formato):
     except Exception as e:
         st.error(f"Error durante la descarga: {e}")
         raise e
+    
 def clean_filename(filename):
     # Remove invalid characters for filenames in Windows
     return re.sub(r'[<>:"/\\|?*]', '', filename)
