@@ -1,61 +1,11 @@
 import streamlit as st
-from pytube import YouTube
-import yt_dlp
-from io import BytesIO
+from descarga import download_audio_to_buffer  # Importa la función de descarga desde descarga.py
 import re
-import tempfile
-import shutil
-import os
 
 st.set_page_config(page_title="Descargar Audio", page_icon="icon.png", layout="centered", initial_sidebar_state="collapsed")
 
-@st.cache_data(show_spinner=False)
-def descargar_audio_a_buffer(url):
-    """
-    Descarga un audio desde YouTube y lo guarda en un buffer de memoria.
-    """
-    try:
-        # Crear un archivo temporal
-        temp_dir = tempfile.mkdtemp()
-        temp_filename = os.path.join(temp_dir, "audio")
-
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': temp_filename + '.%(ext)s',  # Guardamos el archivo temporalmente en disco
-            'postprocessors': [
-                {'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'},  # Extraemos como mp3
-                {'key': 'FFmpegMetadata'},  # Añadir metadatos al archivo
-                {'key': 'EmbedThumbnail', 'already_have_thumbnail': False},  # Incrustar carátula
-            ],
-            'writethumbnail': True,  # Descargar carátulas
-            'cookiefile': 'cookies.txt',
-            'quiet': True,
-            'noplaylist': True,  # Evitar que descargue listas de reproducción
-        }
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            data = ydl.extract_info(url, download=False)  # Obtener la información sin descargar
-            titulo_original = data.get('title', 'sin_título')
-            artista = data.get('uploader', 'desconocido')
-
-            # Descargar el archivo con los metadatos añadidos
-            ydl.download([url])
-
-        # Cargar el archivo descargado en el buffer
-        with open(temp_filename + '.mp3', 'rb') as f:
-            buffer = BytesIO(f.read())
-        
-        # Limpiar el archivo temporal después de usarlo
-        shutil.rmtree(temp_dir)
-
-        return titulo_original, artista, buffer
-
-    except Exception as e:
-        st.error(f"Error durante la descarga: {e}")
-        raise e
-
 def clean_filename(filename):
-    # Remove invalid characters for filenames in Windows
+    """Eliminar caracteres no válidos para nombres de archivos en Windows."""
     return re.sub(r'[<>:"/\\|?*]', '', filename)
 
 def main():
@@ -65,7 +15,7 @@ def main():
 
         if url:
             with st.spinner("Descargando audio desde YouTube..."):
-                titulo_original, artista, buffer = descargar_audio_a_buffer(url)
+                titulo_original, artista, buffer = download_audio_to_buffer(url)
 
             st.subheader("Título")
             st.write(f"🎵 **Título**: {titulo_original}")
