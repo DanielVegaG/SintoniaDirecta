@@ -4,6 +4,8 @@ import yt_dlp
 from io import BytesIO
 from urllib.parse import unquote
 import re
+import tempfile
+import shutil
 
 st.set_page_config(page_title="Descargar Video", page_icon="icon.png", layout="centered", initial_sidebar_state="collapsed")
 
@@ -13,10 +15,13 @@ def descargar_video_a_buffer(url, formato):
     Descarga un video o audio desde YouTube y lo guarda en un buffer de memoria.
     """
     try:
-        buffer = BytesIO()
+        # Crear un archivo temporal
+        temp_dir = tempfile.mkdtemp()
+        temp_filename = os.path.join(temp_dir, "audio_o_video")
+
         ydl_opts = {
             'format': 'bestaudio/best' if formato == 'mp3' else 'bestvideo+bestaudio/best',
-            'outtmpl': '-',  # Salida al buffer
+            'outtmpl': temp_filename + '.%(ext)s',  # Guardamos el archivo temporalmente en disco
             'postprocessors': [
                 {'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'} if formato == 'mp3' else {},
                 {'key': 'FFmpegMetadata'},  # Añadir metadatos al archivo
@@ -26,7 +31,6 @@ def descargar_video_a_buffer(url, formato):
             'cookiefile': 'cookies.txt',
             'quiet': True,
             'noplaylist': True,  # Evitar que descargue listas de reproducción
-            'outtmpl': '-',  # Descarga al buffer
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -34,13 +38,18 @@ def descargar_video_a_buffer(url, formato):
             titulo_original = data.get('title', 'sin_título')
             artista = data.get('uploader', 'desconocido')
 
-            # Descargamos el audio y lo guardamos directamente en el buffer
+            # Descargar el archivo con los metadatos añadidos
             ydl.download([url])
 
-            # Después de la descarga, el archivo se encuentra en el buffer
-            buffer.seek(0)
+        # Cargar el archivo descargado en el buffer
+        with open(temp_filename + '.mp3', 'rb') as f:
+            buffer = BytesIO(f.read())
         
+        # Limpiar el archivo temporal después de usarlo
+        shutil.rmtree(temp_dir)
+
         return titulo_original, artista, buffer
+
     except Exception as e:
         st.error(f"Error durante la descarga: {e}")
         raise e
