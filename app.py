@@ -24,25 +24,26 @@ def descargar_video_a_buffer(url, formato):
             ],
             'writethumbnail': True,  # Descargar carátulas
             'cookiefile': 'cookies.txt',
-            'quiet': False,
+            'quiet': True,
+            'noplaylist': True,  # Evitar que descargue listas de reproducción
+            'outtmpl': '-',  # Descarga al buffer
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            data = ydl.extract_info(url, download=False)  # Obtener información sin descargar
+            data = ydl.extract_info(url, download=False)  # Obtener la información sin descargar
             titulo_original = data.get('title', 'sin_título')
             artista = data.get('uploader', 'desconocido')
-            ydl.download([url])  # Descargar el archivo procesado
-            
-            # Abrimos el archivo temporal procesado para pasarlo al buffer
-            temp_file = f"{titulo_original}.mp3"
-            with open(temp_file, "rb") as f:
-                buffer.write(f.read())
+
+            # Descargamos el audio y lo guardamos directamente en el buffer
+            ydl.download([url])
+
+            # Después de la descarga, el archivo se encuentra en el buffer
+            buffer.seek(0)
         
         return titulo_original, artista, buffer
     except Exception as e:
         st.error(f"Error durante la descarga: {e}")
         raise e
-
 def clean_filename(filename):
     # Remove invalid characters for filenames in Windows
     return re.sub(r'[<>:"/\\|?*]', '', filename)
