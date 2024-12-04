@@ -1,5 +1,6 @@
 import streamlit as st
 from pytube import YouTube
+import yt_dlp
 from io import BytesIO
 from urllib.parse import unquote
 import re
@@ -9,18 +10,20 @@ st.set_page_config(page_title="Descargar Video", page_icon="icon.png", layout="c
 @st.cache_data(show_spinner=False)
 def descargar_video_a_buffer(url, formato):
     buffer = BytesIO()
-    youtube_video = YouTube(url)
-    
-    # Obtener el título original del video y decodificar caracteres especiales
-    titulo_original = unquote(youtube_video.title)
-    
-    if formato == 'mp3':
-        video = youtube_video.streams.filter(only_audio=True).first()
-    else:
-        video = youtube_video.streams.filter(progressive=True, file_extension="mp4").order_by('resolution').desc().first()
+    ydl_opts = {
+        'format': 'bestaudio/best' if formato == 'mp3' else 'bestvideo+bestaudio/best',
+        'outtmpl': '-',  # Output al buffer
+        'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}] if formato == 'mp3' else [],
+        'quiet': True,
+        'cookiesfrombrowser': ('chrome',),  # Usa cookies de Chrome
+    }
 
-    nombre_archivo = video.default_filename
-    video.stream_to_buffer(buffer)
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        data = ydl.extract_info(url, download=False)  # Solo obtener información
+        titulo_original = data['title']
+        ydl.download([url])  # Descargar y procesar
+        buffer.write(ydl.urlopen(data['url']).read())
+    
     return titulo_original, buffer
 
 def clean_filename(filename):
