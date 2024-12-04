@@ -18,7 +18,7 @@ def descargar_video_a_buffer(url, formato):
         'outtmpl': '-',  # Output al buffer
         'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}] if formato == 'mp3' else [],
         'quiet': True,
-        'cookiesfrombrowser': ('brave',),
+        'cookiefile': 'cookies.txt',
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
