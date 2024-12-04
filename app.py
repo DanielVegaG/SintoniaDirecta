@@ -9,13 +9,16 @@ st.set_page_config(page_title="Descargar Video", page_icon="icon.png", layout="c
 
 @st.cache_data(show_spinner=False)
 def descargar_video_a_buffer(url, formato):
+    """
+    Descarga un video o audio desde YouTube y lo guarda en un buffer de memoria.
+    """
     buffer = BytesIO()
     ydl_opts = {
         'format': 'bestaudio/best' if formato == 'mp3' else 'bestvideo+bestaudio/best',
         'outtmpl': '-',  # Output al buffer
         'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}] if formato == 'mp3' else [],
         'quiet': True,
-        'cookiesfrombrowser': ('chrome',),  # Usa cookies de Chrome
+        'cookiesfrombrowser': ('brave',),
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
