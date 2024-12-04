@@ -2,7 +2,7 @@
 
 ## Descripción
 
-Sintonía Directa es una aplicación web que permite descargar audio y vídeo desde YouTube. La aplicación está construida usando Streamlit y la biblioteca PyTube para la descarga de contenidos.
+Sintonía Directa es una aplicación web que permite descargar audio y vídeo desde YouTube. La aplicación está construida usando Streamlit y la biblioteca YT_dlp para la descarga de contenidos.
 
 ## Estructura del Proyecto
 
@@ -16,12 +16,12 @@ El proyecto está dividido en dos archivos principales:
 Para ejecutar esta aplicación, necesitas tener instalado Python 3.x y las siguientes bibliotecas:
 
 - Streamlit
-- PyTube
+- yt_dlp
 
 Puedes instalarlas usando pip:
 
 ```bash
-pip install streamlit pytube
+pip install streamlit yt_dlp
 ```
 
 ## Uso de aplicación
