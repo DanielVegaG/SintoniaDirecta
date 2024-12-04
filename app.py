@@ -16,14 +16,21 @@ def descargar_video_a_buffer(url, formato):
     ydl_opts = {
         'format': 'bestaudio/best' if formato == 'mp3' else 'bestvideo+bestaudio/best',
         'outtmpl': '-',  # Output al buffer
-        'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}] if formato == 'mp3' else [],
-        'quiet': True,
+        'postprocessors': [
+            {'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'} if formato == 'mp3' else {},
+            {'key': 'FFmpegMetadata'},  # Agregar metadatos
+            {'key': 'EmbedThumbnail'},  # Incrustar carátulas
+        ],
+        'outtmpl': '-',  # Salida al buffer
+        'writethumbnail': True,  # Descargar miniaturas
         'cookiefile': 'cookies.txt',
+        'quiet': True,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         data = ydl.extract_info(url, download=False)  # Solo obtener información
-        titulo_original = data['title']
+        titulo_original = data.get('title', 'sin_título')
+        artista = data.get('uploader', 'desconocido')
         ydl.download([url])  # Descargar y procesar
         buffer.write(ydl.urlopen(data['url']).read())
     
@@ -40,10 +47,12 @@ def main():
 
     if url:
         with st.spinner(f"Descargando stream de {'audio' if formato == 'MP3' else 'video'} desde YouTube..."):
-            titulo_original, buffer = descargar_video_a_buffer(url, formato.lower())
+            titulo_original, artista, buffer = descargar_video_a_buffer(url, formato.lower())
         
         st.subheader("Título")
-        st.write(titulo_original)
+        st.write(f"🎵 **Título**: {titulo_original}")
+        if formato == 'MP3':
+            st.write(f"👤 **Artista**: {artista}")
         
         if formato == 'MP3':
             titulo_audio = clean_filename(titulo_original) + ".mp3"

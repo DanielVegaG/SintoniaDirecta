@@ -11,21 +11,18 @@ def download_playlist(url, output_path=None, format='mp3'):
         output_path = get_downloads_directory()
 
     ydl_opts = {
-        'format': 'ba',  # 'ba' for best audio
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': format,  # audio format
-        }, {
-            'key': 'FFmpegMetadata'  # Añadir metadatos con FFmpeg
-        }, {
-            'key': 'EmbedThumbnail'  # Incrustar carátulas
-        }],
+        'format': 'ba',
+        'postprocessors': [
+            {'key': 'FFmpegExtractAudio', 'preferredcodec': format},
+            {'key': 'FFmpegMetadata'},
+            {'key': 'EmbedThumbnail'},
+        ],
         'outtmpl': os.path.join(output_path, '%(uploader)s', '%(title)s.%(ext)s'),
-        'writethumbnail': True,  # Descargar carátulas
-        'extractaudio': True,  # extract audio
-        'audioformat': format,  # formato de audio
-        'merge_output_format': None,  # disable merging audio and video
-        'noplaylist': False,  # Activar la descarga de listas de reproducción
+        'writethumbnail': True,
+        'extractaudio': True,
+        'audioformat': format,
+        'merge_output_format': None,
+        'noplaylist': False,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
